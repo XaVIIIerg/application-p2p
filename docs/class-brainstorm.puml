@@ -1,0 +1,80 @@
+@startuml class
+
+title "Diagramme de classe poneytoponey"
+
+hide empty members
+
+interface Remote <<java.rmi>>
+
+class App
+HumanIdentity "1"--"0..1" App: create <
+App "1"--"1" View: start >
+
+interface View {
+    start(humanIdentity: HumanIdentity)
+    showChatRequest(from: String)
+    showChatClose(from: String)
+    showChatRefuse(from: String)
+    showChatMessage(message: String)
+}
+
+class ShellView implements View {
+    - currentChat: Uuid
+    - joinedNetwork: bool
+    - join(username: String)
+    - showHelp()
+    - createSwitchChat(recipient: String)
+    - closeChat(recipient: String)
+    - refuseChat(recipient: String)
+    - sendMessage(text: String)
+    - listParticipants()
+    - waitWithShellPrompt()
+    - parseCommand()
+}
+
+class Chat {
+    -uuid: Uuid
+    -approved: bool
+    +getUuid(): Uuid
+    +getApproved(): bool
+    +setApproved(state: bool)
+}
+
+interface Identity extends Remote {
+    +remoteAskForChat(author: String, chatId: Uuid)
+    +remoteApproveBackChat(chatId: Uuid)
+    +remoteRefuseChat(chatId: Uuid)
+    +remoteSendMessageInChat(chatId: Uuid, text: String, senderTimestamp: Timestamp)
+    +remoteCloseChat(chatId: Uuid)
+}
+
+class HumanIdentity implements Identity {
+    -username: String
+    +getUsername(): String
+    +listParticipantsUsername(): String[]
+    +getChats(): Chat[]
+    +createChat(recipient: String): Chat
+    +approveChat(chatId: Uuid)
+    +subscribeViewForChatEvent(view: View)
+    +sendMessage(chatId: Uuid, text: String)
+    +closeChat(chatId: Uuid)
+}
+
+HumanIdentity "1"-l---"*" Chat: "     manage    >"
+HumanIdentity "*"-l-"*" HumanIdentity: remotely discuss with >
+HumanIdentity "1"-"0..1" View: send event to >
+HumanIdentity "1"-u--"*" Identity: keep known participants \nin cache by username <
+Chat "1"--"*" Message: contain >
+
+class Message {
+    -text: String
+    -senderTimestamp: Timestamp
+    -index: Integer
+    -author: String
+}
+
+object Registry
+
+Registry "0..1"-"*" Remote: take notes by String of published >
+
+@enduml

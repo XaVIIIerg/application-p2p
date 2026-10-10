@@ -1,0 +1,11 @@
+.metals
+project/app/.settings
+project/app/bin
+project/app/.classpath
+project/app/.project
+project/.settings
+project/.project
+docs/.$deployement.drawio.bkp
+docs/.$component.drawio.bkp
+.vscode
+project/chats

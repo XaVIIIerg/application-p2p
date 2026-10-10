@@ -1,0 +1,68 @@
+@startuml
+title "Diagramme de séquence"
+participant "m1" as m1
+participant "m2" as m2
+participant "m3" as m3
+participant "directory" as registry
+
+m1->m1: Recharge automatiquement les conversations passées
+m1->registry:Je publie mon nom et ma clé publique pour rejoindre le réseau
+registry-->m1:Envoi texte à signer pour prouver l'identité
+m1-->registry:Envoi texte signé
+registry->registry:Entre le nom, la clé publique et l'adresse IP\n dans la liste des utilisateurs réseau
+m1-> registry: Je demande la liste des utilisateurs 
+registry-->m1:Envoie la liste des noms, IP et clés publiques \ndes membres courants du réseau
+m1->m2:Demande de créer un nouveau chat
+alt Réponse tardive/absente 
+m1->m1: Timeout expiré pour avoir une réponse
+m1->m1: Annulation
+
+else Demande refusée
+m2-->m1:Je refuse
+else Demande acceptée
+m2-->m1:J'accepte
+m1->m1:Etablissement du chat et sauvegarde des chats courants
+m2->m2:Etablissement du chat et sauvegarde des chats courants
+m1->m2:Envoi message avec texte, timestamp et auteur chiffré avec la clé publique de m2\n et auteur+texte+timestamp signé
+alt message reçu correctement chiffré et signé
+m2-->m1:ack
+m2->m2: sauvegarde des chats courants
+m1->m1: sauvegarde des chats courants
+m2->m1:Envoi message avec texte, timestamp et auteur chiffré avec la clé publique de m1\n et auteur+texte+timestamp signé
+m1-->m2:ack
+m1->m1:sauvegarde des chats courants
+m2->m2:sauvegarde des chats courants
+else message reçu non correctement signé
+m2-->m1: ack
+m2->m2: Suppression du message frauduleux
+m1->m1:sauvegarde des chats courants
+end
+alt déconnexion par commande
+    m1->registry:Annonce départ
+    registry-->m1:Envoi texte à signer pour prouver l'identité
+    m1-->registry:Envoi texte signé
+    registry->registry:Retire le nom, la clé et l'IP des utilisateurs réseau
+else Conversation terminée par déconnexion imprévue
+    m2->m1:Envoi message avec texte, timestamp et auteur chiffré avec la clé publique de m1\n et auteur+texte+timestamp signé
+    m2->m2:timeout expiré
+    m2->m2:Fermeture du chat (absence de confirmation de récéption)
+    m2->m2: sauvegarde des chats courants
+else Conversation terminée par commande 
+    m1->m2: Annonce fermeture du chat
+    m2->m2: Fermeture du chat et sauvegarde des chats courants
+    m1->m1: Fermeture du chat et sauvegarde des chats courants
+end
+end
+alt broadcast avec signature correcte
+m1->m2:envoi message de broadcast \net auteur avec texte+auteur+timestamp signé
+m2->m2: vérification de la signature \net acceptation du message
+m1->m3:envoi message de broadcast et auteur \navec texte+auteur+timestamp signé
+m3->m3: vérification de la signature \net acceptation du message
+else broadcast avec signature incorrecte
+m1->m2:envoi message de broadcast \net auteur avec texte+auteur+timestamp signé
+m2->m2: vérification de la signature \net suppression du message frauduleux
+m1->m3:envoi message de broadcast et auteur \navec texte+auteur+timestamp signé
+m3->m3: vérification de la signature \net suppression du message frauduleux
+end
+
+@enduml sequence
